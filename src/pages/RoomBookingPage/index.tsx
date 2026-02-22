@@ -1,9 +1,10 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingTab } from "@/src/pages/components/booking-tab";
 import { MyReservationsTab } from "@/src/pages/components/my-reservations-tab";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropsWithChildren } from "react";
 
 export function RoomBookingPage() {
+
   return (
     <>
       <Title>회의실 예약</Title>

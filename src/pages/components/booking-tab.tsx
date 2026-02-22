@@ -1,17 +1,21 @@
-import { Tv, Presentation, Video, Volume2, Building2, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Presentation, Tv, Video, Volume2 } from "lucide-react";
 
-import { Label } from "@/components/ui/label";
+import { DateField } from "@/components/date-field";
+import { InputField } from "@/components/input-field";
+import { SelectField } from "@/components/select-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { InputField } from "@/components/input-field";
+import { Label } from "@/components/ui/label";
 import { SubCard, SubCardContent, SubCardHeader } from "@/components/ui/sub-card";
-import { SelectField } from "@/components/select-field";
-import { DateField } from "@/components/date-field";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { getReservationsQueryOptions, getRoomsQueryOptions } from "@/src/remotes/queryOptions";
+import { SuspenseQueries } from '@suspensive/react-query';
 import { RoomSelect } from "./room-select";
 
+
 export function BookingTab() {
+
   return (
     <div className="space-y-6">
       <Card>
@@ -20,19 +24,28 @@ export function BookingTab() {
         </CardHeader>
         <CardContent>
           <DateField label="날짜 선택" />
-          <SubCard>
-            <SubCardHeader>회의실 1</SubCardHeader>
-            <SubCardContent>
-              <Badge variant="outline">10:00 - 11:00</Badge>
-              <Badge variant="outline">10:00 - 11:00</Badge>
-            </SubCardContent>
-          </SubCard>
-          <SubCard>
-            <SubCardHeader>회의실 2</SubCardHeader>
-            <SubCardContent>
-              <p className="text-muted-foreground text-sm">예약 없음</p>
-            </SubCardContent>
-          </SubCard>
+          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions("2026-02-22")]}>
+            {([{ data: rooms }, { data: reservations }]) => {
+              return rooms.map((room) => {
+                const currentRoomReservations = reservations.filter((reservation) => reservation.roomId === room.id);
+                return (
+                  <SubCard>
+                    <SubCardHeader>{room.name}</SubCardHeader>
+                    <SubCardContent>
+                      {currentRoomReservations.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">예약 없음</p>
+                      ) : (
+                        currentRoomReservations.map((reservation) => (
+                          <Badge variant="outline">{reservation.start} - {reservation.end}</Badge>
+                        ))
+                      )}
+                    </SubCardContent>
+                  </SubCard>
+                )
+              })
+            }}
+
+          </SuspenseQueries>
         </CardContent>
       </Card>
 
@@ -90,6 +103,6 @@ export function BookingTab() {
           <Button size="lg">예약하기</Button>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 }
