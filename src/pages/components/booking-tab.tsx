@@ -11,10 +11,14 @@ import { SubCard, SubCardContent, SubCardHeader } from "@/components/ui/sub-card
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getReservationsQueryOptions, getRoomsQueryOptions } from "@/src/remotes/queryOptions";
 import { SuspenseQueries } from '@suspensive/react-query';
+import { format } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 import { RoomSelect } from "./room-select";
 
 
 export function BookingTab() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const date = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
 
   return (
     <div className="space-y-6">
@@ -23,8 +27,12 @@ export function BookingTab() {
           <CardTitle>예약 현황</CardTitle>
         </CardHeader>
         <CardContent>
-          <DateField label="날짜 선택" />
-          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions("2026-02-22")]}>
+          <DateField label="날짜 선택" value={new Date(date)} onSelect={
+            (date) => {
+              setSearchParams(() => ({ date: format(date ?? new Date(), 'yyyy-MM-dd') }))
+            }
+          } />
+          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
             {([{ data: rooms }, { data: reservations }]) => {
               return rooms.map((room) => {
                 const currentRoomReservations = reservations.filter((reservation) => reservation.roomId === room.id);
