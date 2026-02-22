@@ -223,6 +223,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@colors/colors@npm:1.5.0":
+  version: 1.5.0
+  resolution: "@colors/colors@npm:1.5.0"
+  checksum: 10c0/eb42729851adca56d19a08e48d5a1e95efd2a32c55ae0323de8119052be0510d4b7a1611f2abcbf28c044a6c11e6b7d38f99fccdad7429300c37a8ea5fb95b44
+  languageName: node
+  linkType: hard
+
+"@commander-js/extra-typings@npm:^13.0.0":
+  version: 13.1.0
+  resolution: "@commander-js/extra-typings@npm:13.1.0"
+  peerDependencies:
+    commander: ~13.1.0
+  checksum: 10c0/ff799f0641f68855aa73c976912a607c25d564df34fd8e262927a80b19f6cccd882fe7ce098a0e072a497fd0020cbd19fd1e4d5cc98a461cd6623abf8ed5f4e7
+  languageName: node
+  linkType: hard
+
 "@date-fns/tz@npm:1.2.0":
   version: 1.2.0
   resolution: "@date-fns/tz@npm:1.2.0"
@@ -2533,6 +2549,54 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@suspensive/react-query-4@npm:^3.19.0":
+  version: 3.19.0
+  resolution: "@suspensive/react-query-4@npm:3.19.0"
+  peerDependencies:
+    "@tanstack/react-query": "*"
+    react: ^18 || ^19
+  checksum: 10c0/315c182edc0452bce8ec354fc08351dc9a5ce77c02dce597454b32ed7c929775864f6106d736e90f4b8b7d81453e785ca375b414801591fc014fc743fb9bbcfd
+  languageName: node
+  linkType: hard
+
+"@suspensive/react-query-5@npm:^3.19.0":
+  version: 3.19.0
+  resolution: "@suspensive/react-query-5@npm:3.19.0"
+  peerDependencies:
+    "@tanstack/react-query": "*"
+    react: ^18 || ^19
+  checksum: 10c0/e8cfe7e4ebdd2f9b00ab5117c6dba5fb3a6cf29764248c64746a7dccbe02ab1d7103dea7bcf818e8e1266e1b6af28e77cf30a5926fd86b2005c2c51d4af7e6ae
+  languageName: node
+  linkType: hard
+
+"@suspensive/react-query@npm:^3.19.0":
+  version: 3.19.0
+  resolution: "@suspensive/react-query@npm:3.19.0"
+  dependencies:
+    "@commander-js/extra-typings": "npm:^13.0.0"
+    "@suspensive/react-query-4": "npm:^3.19.0"
+    "@suspensive/react-query-5": "npm:^3.19.0"
+    cli-table3: "npm:^0.6.5"
+    commander: "npm:^13.0.0"
+  peerDependencies:
+    "@tanstack/react-query": ^4.42.0 || ^5.82.0
+    react: ^18 || ^19
+  bin:
+    srq: dist/bin/cli.cjs
+    suspensive-react-query: dist/bin/cli.cjs
+  checksum: 10c0/58d0dedff736a2f6376ef2e9efa9ab487099332f03e1ddc6b84589a82cc367dd9d690fcb1c97c8b152d44a9c67fa7002a2d507a92ebc6ffb71a2afbad6f2677d
+  languageName: node
+  linkType: hard
+
+"@suspensive/react@npm:^3.19.0":
+  version: 3.19.0
+  resolution: "@suspensive/react@npm:3.19.0"
+  peerDependencies:
+    react: ^18 || ^19
+  checksum: 10c0/a7e2e25af52c584f1843e19818462d442bc5a661be921e96e4d1a444944ed8edb24d0505ecd4200f5a3c4a95848e054c63b3b46ef82655b0cd49d21132159e28
+  languageName: node
+  linkType: hard
+
 "@tailwindcss/node@npm:4.1.18":
   version: 4.1.18
   resolution: "@tailwindcss/node@npm:4.1.18"
@@ -3576,6 +3640,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cli-table3@npm:^0.6.5":
+  version: 0.6.5
+  resolution: "cli-table3@npm:0.6.5"
+  dependencies:
+    "@colors/colors": "npm:1.5.0"
+    string-width: "npm:^4.2.0"
+  dependenciesMeta:
+    "@colors/colors":
+      optional: true
+  checksum: 10c0/d7cc9ed12212ae68241cc7a3133c52b844113b17856e11f4f81308acc3febcea7cc9fd298e70933e294dd642866b29fd5d113c2c098948701d0c35f09455de78
+  languageName: node
+  linkType: hard
+
 "cli-width@npm:^4.1.0":
   version: 4.1.0
   resolution: "cli-width@npm:4.1.0"
@@ -3629,6 +3706,13 @@ __metadata:
   version: 1.1.4
   resolution: "color-name@npm:1.1.4"
   checksum: 10c0/a1a3f914156960902f46f7f56bc62effc6c94e84b2cae157a526b1c1f74b677a47ec602bf68a61abfa2b42d15b7c5651c6dbe72a43af720bc588dff885b10f95
+  languageName: node
+  linkType: hard
+
+"commander@npm:^13.0.0":
+  version: 13.1.0
+  resolution: "commander@npm:13.1.0"
+  checksum: 10c0/7b8c5544bba704fbe84b7cab2e043df8586d5c114a4c5b607f83ae5060708940ed0b5bd5838cf8ce27539cde265c1cbd59ce3c8c6b017ed3eec8943e3a415164
   languageName: node
   linkType: hard
 
@@ -6652,6 +6736,8 @@ __metadata:
     "@radix-ui/react-toggle": "npm:^1.1.10"
     "@radix-ui/react-toggle-group": "npm:^1.1.11"
     "@radix-ui/react-tooltip": "npm:1.1.6"
+    "@suspensive/react": "npm:^3.19.0"
+    "@suspensive/react-query": "npm:^3.19.0"
     "@tailwindcss/postcss": "npm:^4.1.9"
     "@tanstack/react-query": "npm:^5.62.8"
     "@types/eslint-plugin-jsx-a11y": "npm:^6"
