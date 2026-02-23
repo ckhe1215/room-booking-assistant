@@ -1,9 +1,12 @@
 import { Calendar } from "@/components/ui/calendar";
-import { getMyReservationsQueryOptions } from "@/src/remotes/queryOptions";
+import { cancelReservation, getMyReservationsQueryOptions } from "@/src/remotes/queryOptions";
 import { SuspenseQuery } from "@suspensive/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { ReservationCard } from "./reservation-card";
 
 export function MyReservationsTab() {
+  const queryClient = useQueryClient();
+
   return (
     <SuspenseQuery {...getMyReservationsQueryOptions()}>
       {({ data }) => {
@@ -17,15 +20,21 @@ export function MyReservationsTab() {
         return (
           <div className="space-y-4">
             {
-              data.map((item) => <> <ReservationCard
+              data.map((item) => <ReservationCard
+                key={item.id}
                 name={item.roomId}
                 date={item.date}
                 startTime={item.start}
                 endTime={item.end}
                 capacity={item.attendees}
                 equipments={item.equipments}
-                onCancel={() => { }}
-              /></>)
+                onCancel={async () => {
+                  const response = await cancelReservation(item.id);
+                  if (response.ok) {
+                    queryClient.invalidateQueries({ queryKey: ["my-reservations"] });
+                  }
+                }}
+              />)
             }
           </div>
         )
