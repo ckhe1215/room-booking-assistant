@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+
 export type RoomsResponse = {
   id: string;
   name: string;
@@ -7,10 +9,10 @@ export type RoomsResponse = {
 };
 
 export const getRoomsQueryOptions = () => {
-  return {
+  return queryOptions({
     queryKey: ["rooms"],
     queryFn: (): Promise<RoomsResponse[]> => fetch("/api/rooms").then((res) => res.json()),
-  };
+  });
 };
 
 type ReservationsResponse = {
@@ -24,10 +26,10 @@ type ReservationsResponse = {
 };
 
 export const getReservationsQueryOptions = (date: string) => {
-  return {
+  return queryOptions({
     queryKey: ["reservations", date],
     queryFn: (): Promise<ReservationsResponse[]> => fetch(`/api/reservations?date=${date}`).then((res) => res.json()),
-  };
+  });
 };
 
 export type MyReservationsResponse = {
@@ -41,10 +43,10 @@ export type MyReservationsResponse = {
 };
 
 export const getMyReservationsQueryOptions = () => {
-  return {
+  return queryOptions({
     queryKey: ["my-reservations"],
     queryFn: (): Promise<MyReservationsResponse[]> => fetch("/api/my-reservations").then((res) => res.json()),
-  };
+  });
 };
 
 type Reservation = {
