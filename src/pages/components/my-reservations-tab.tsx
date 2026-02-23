@@ -19,8 +19,8 @@ export function MyReservationsTab() {
         }
         return (
           <div className="space-y-4">
-            {
-              data.map((item) => <ReservationCard
+            {data.map((item) =>
+              <ReservationCard
                 key={item.id}
                 name={item.roomId}
                 date={item.date}
@@ -38,9 +38,7 @@ export function MyReservationsTab() {
             }
           </div>
         )
-
       }}
     </SuspenseQuery >
-
   );
 }

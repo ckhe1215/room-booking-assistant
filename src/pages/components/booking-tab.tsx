@@ -30,7 +30,7 @@ type BookingFormValues = {
 
 export function BookingTab() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const date = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
+  const dateParam = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
   const { control, register, watch, handleSubmit, formState: { errors }, trigger } = useForm<BookingFormValues>({
     mode: "onChange",
     defaultValues: {
@@ -45,6 +45,7 @@ export function BookingTab() {
   const queryClient = useQueryClient();
 
   const startTime = watch("start");
+  const formDate = watch("date");
 
   useEffect(() => {
     trigger("end");
@@ -57,31 +58,29 @@ export function BookingTab() {
           <CardTitle>예약 현황</CardTitle>
         </CardHeader>
         <CardContent>
-          <DateField label="날짜 선택" value={new Date(date)} onSelect={
+          <DateField label="날짜 선택" value={new Date(dateParam)} onSelect={
             (date) => {
-              setSearchParams(() => ({ date: format(date ?? new Date(), 'yyyy-MM-dd') }))
+              setSearchParams({ date: format(date ?? new Date(), 'yyyy-MM-dd') })
             }
           } />
-          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
-            {([{ data: rooms }, { data: reservations }]) => {
-              return rooms.map((room) => {
-                const currentRoomReservations = reservations.filter((reservation) => reservation.roomId === room.id);
-                return (
-                  <SubCard>
-                    <SubCardHeader>{room.name}</SubCardHeader>
-                    <SubCardContent>
-                      {currentRoomReservations.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">예약 없음</p>
-                      ) : (
-                        currentRoomReservations.map((reservation) => (
-                          <Badge variant="outline">{reservation.start} - {reservation.end}</Badge>
-                        ))
-                      )}
-                    </SubCardContent>
-                  </SubCard>
-                )
-              })
-            }}
+          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(dateParam)]}>
+            {([{ data: rooms }, { data: reservations }]) => rooms.map((room) => {
+              const currentRoomReservations = reservations.filter((reservation) => reservation.roomId === room.id);
+              return (
+                <SubCard>
+                  <SubCardHeader>{room.name}</SubCardHeader>
+                  <SubCardContent>
+                    {currentRoomReservations.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">예약 없음</p>
+                    ) : (
+                      currentRoomReservations.map((reservation) => (
+                        <Badge variant="outline">{reservation.start} - {reservation.end}</Badge>
+                      ))
+                    )}
+                  </SubCardContent>
+                </SubCard>
+              )
+            })}
           </SuspenseQueries>
         </CardContent>
       </Card>
@@ -112,7 +111,7 @@ export function BookingTab() {
         });
 
         if (res.ok) {
-          queryClient.invalidateQueries({ queryKey: ["reservations", date] });
+          queryClient.invalidateQueries({ queryKey: ["reservations", format(formDate, "yyyy-MM-dd")] });
           toast({
             title: "예약 완료",
             description: "예약이 완료되었습니다.",
@@ -217,7 +216,7 @@ export function BookingTab() {
             <CardTitle>예약 가능한 회의실</CardTitle>
           </CardHeader>
           <CardContent>
-            <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
+            <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(format(formDate, "yyyy-MM-dd"))]}>
               {([{ data: rooms }, { data: reservations }]) => {
                 const filteredRooms = rooms.filter((room) => {
                   return room.capacity >= watch("attendees");
@@ -229,10 +228,9 @@ export function BookingTab() {
                   return preferredFloor ? room.floor === Number(preferredFloor) : true;
                 });
                 const availableRooms = filteredRooms.filter((room) => {
-                  const date = watch("date");
-                  const start = watch("start");
-                  const end = watch("end");
-                  return !reservations.some((reservation) => reservation.date === format(date, "yyyy-MM-dd") && reservation.roomId === room.id && reservation.start < end && reservation.end > start);
+                  const start = parse(watch("start"), "HH:mm", new Date());
+                  const end = parse(watch("end"), "HH:mm", new Date());
+                  return !reservations.some((reservation) => reservation.roomId === room.id && isAfter(end, parse(reservation.start, "HH:mm", new Date())) && isAfter(parse(reservation.end, "HH:mm", new Date()), start));
                 });
 
                 return <>
