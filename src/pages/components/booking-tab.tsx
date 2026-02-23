@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { SubCard, SubCardContent, SubCardHeader } from "@/components/ui/sub-card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "@/hooks/use-toast";
-import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions } from "@/src/remotes/queryOptions";
-import { SuspenseQueries } from '@suspensive/react-query';
+import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions, RoomsResponse } from "@/src/remotes/queryOptions";
+import { SuspenseQueries, SuspenseQuery } from '@suspensive/react-query';
 import { useQueryClient } from "@tanstack/react-query";
 import { format, isAfter, parse } from "date-fns";
 import { useEffect, useState } from "react";
@@ -36,7 +36,7 @@ export function BookingTab() {
     defaultValues: {
       date: new Date(),
       attendees: 1,
-      start: "09:00",
+      start: "9:00",
       end: "10:00",
       equipments: [],
     },
@@ -137,16 +137,7 @@ export function BookingTab() {
               name="start"
               control={control}
               render={({ field }) => (
-                <SelectField label="시작 시간" options={[{
-                  label: "09:00",
-                  value: "09:00"
-                }, {
-                  label: "10:00",
-                  value: "10:00"
-                }, {
-                  label: "17:00",
-                  value: "17:00" // TODO: 실제 값 넣기
-                }]}
+                <SelectField label="시작 시간" options={getTimeOptions({ from: 9, to: 20 })}
                   value={field.value}
                   onValueChange={field.onChange} />
               )}
@@ -163,16 +154,7 @@ export function BookingTab() {
                 }
               }}
               render={({ field }) => (
-                <SelectField label="종료 시간" options={[{
-                  label: "09:00",
-                  value: "09:00"
-                }, {
-                  label: "10:00",
-                  value: "10:00"
-                }, {
-                  label: "17:00",
-                  value: "17:00" // TODO: 실제 값 넣기
-                }]}
+                <SelectField label="종료 시간" options={getTimeOptions({ from: 9, to: 20 })}
                   value={field.value}
                   onValueChange={field.onChange}
                 />
@@ -183,16 +165,19 @@ export function BookingTab() {
               name="floor"
               control={control}
               render={({ field }) => (
-                <SelectField
-                  label="선호 층 (선택)"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  options={[
-                    { label: "1", value: "1" },
-                    { label: "2", value: "2" },
-                    { label: "3", value: "3" }, // TODO: 실제 값 넣기
-                  ]}
-                />
+                <SuspenseQuery {...getRoomsQueryOptions()}>
+                  {({ data }) => {
+                    return (
+                      <SelectField
+                        label="선호 층 (선택)"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={getFloors(data)}
+                      />
+                    )
+                  }}
+                </SuspenseQuery>
+
               )}
             />
 
@@ -267,4 +252,24 @@ export function BookingTab() {
 
     </div >
   );
+}
+
+export const getFloors = (rooms: RoomsResponse[]) => {
+  const floors = new Set(rooms.map((room) => room.floor));
+  return Array.from(floors).sort((a, b) => a - b).map((floor) => ({
+    label: `${floor}층`,
+    value: String(floor),
+  }));
+}
+
+export const getTimeOptions = ({ from, to }: { from: number; to: number }) => {
+  const hours = Array.from({ length: to - from }, (_, i) => i + from);
+  const minutes = [0, 30];
+  return hours.flatMap((hour) => minutes.map((minute) => ({
+    label: `${hour}:${minute < 10 ? "0" : ""}${minute}`,
+    value: `${hour}:${minute < 10 ? "0" : ""}${minute}`,
+  }))).concat({
+    label: `${to}:00`,
+    value: `${to}:00`,
+  });
 }
