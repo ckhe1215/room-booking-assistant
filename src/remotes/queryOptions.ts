@@ -20,7 +20,7 @@ type ReservationsResponse = {
   start: string; // HH:mm
   end: string; // HH:mm
   attendees: number;
-  equipment: ("tv" | "whiteboard" | "video" | "speaker")[];
+  equipments: ("tv" | "whiteboard" | "video" | "speaker")[];
 };
 
 export const getReservationsQueryOptions = (date: string) => {
@@ -28,4 +28,45 @@ export const getReservationsQueryOptions = (date: string) => {
     queryKey: ["reservations", date],
     queryFn: (): Promise<ReservationsResponse[]> => fetch(`/api/reservations?date=${date}`).then((res) => res.json()),
   };
+};
+
+type Reservation = {
+  id: string;
+  roomId: string;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:mm
+  end: string; // HH:mm
+  attendees: number;
+  equipments: ("tv" | "whiteboard" | "video" | "speaker")[];
+  userId: string;
+};
+
+export type CreateReservationRequest = {
+  roomId: string;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:mm
+  end: string; // HH:mm
+  attendees: number;
+  equipments: ("tv" | "whiteboard" | "video" | "speaker")[];
+};
+
+export type CreateReservationResponse =
+  | {
+      ok: true;
+      reservation: Reservation;
+    }
+  | {
+      ok: false;
+      code: "CONFLICT" | "INVALID" | "NOT_FOUND";
+      message: string;
+    };
+
+export const createReservations = (request: CreateReservationRequest): Promise<CreateReservationResponse> => {
+  return fetch("/api/reservations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  }).then((res) => res.json());
 };

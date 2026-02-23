@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SubCard, SubCardContent, SubCardHeader } from "@/components/ui/sub-card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { getReservationsQueryOptions, getRoomsQueryOptions } from "@/src/remotes/queryOptions";
+import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions } from "@/src/remotes/queryOptions";
 import { SuspenseQueries } from '@suspensive/react-query';
 import { format } from "date-fns";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useSearchParams } from "react-router-dom";
 import { RoomSelect } from "./room-select";
@@ -28,7 +29,7 @@ type BookingFormValues = {
 export function BookingTab() {
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
-  const { control, register, watch } = useForm<BookingFormValues>({ // TODO: 검증추가
+  const { control, register, watch, handleSubmit } = useForm<BookingFormValues>({ // TODO: 검증추가
     defaultValues: {
       date: new Date(),
       attendees: 1,
@@ -37,6 +38,7 @@ export function BookingTab() {
       equipments: [],
     }
   });
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -74,7 +76,19 @@ export function BookingTab() {
         </CardContent>
       </Card>
 
-      <form>
+      <form onSubmit={handleSubmit((data) => {
+        if (!selectedRoom) {
+          return;
+        }
+        createReservations({
+          roomId: selectedRoom,
+          date: format(data.date, 'yyyy-MM-dd'),
+          start: data.start,
+          end: data.end,
+          attendees: data.attendees,
+          equipments: data.equipments,
+        });
+      })}>
         <Card>
           <CardHeader>
             <CardTitle>예약 조건</CardTitle>
@@ -170,44 +184,47 @@ export function BookingTab() {
             </div>
           </CardContent>
         </Card>
+
+
+        <Card>
+          <CardHeader>
+            <CardTitle>예약 가능한 회의실</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
+              {([{ data: rooms }, { data: reservations }]) => {
+
+                const filteredRooms = rooms.filter((room) => {
+                  return room.capacity >= watch("attendees");
+                }).filter((room) => {
+                  const requiredEquipments = watch("equipments");
+                  return requiredEquipments.every((equipment) => room.equipments.includes(equipment));
+                }).filter((room) => {
+                  const preferredFloor = watch("floor");
+                  return preferredFloor ? room.floor === Number(preferredFloor) : true;
+                });
+                const availableRooms = filteredRooms.filter((room) => {
+                  const date = watch("date");
+                  const start = watch("start");
+                  const end = watch("end");
+                  return !reservations.some((reservation) => reservation.date === format(date, "yyyy-MM-dd") && reservation.roomId === room.id && reservation.start < end && reservation.end > start);
+                });
+
+                return <>
+                  {availableRooms.map((room) => (
+                    <RoomSelect key={room.id} selected={room.id === selectedRoom} onSelect={() => {
+                      setSelectedRoom(room.id);
+                    }} name={room.name} floor={room.floor} capacity={room.capacity} equipments={room.equipments} />
+                  ))}
+                </>
+              }}
+            </SuspenseQueries>
+
+            <Button size="lg" type="submit">예약하기</Button>
+          </CardContent>
+        </Card>
       </form>
 
-
-      <Card>
-        <CardHeader>
-          <CardTitle>예약 가능한 회의실</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
-            {([{ data: rooms }, { data: reservations }]) => {
-
-              const filteredRooms = rooms.filter((room) => {
-                return room.capacity >= watch("attendees");
-              }).filter((room) => {
-                const requiredEquipments = watch("equipments");
-                return requiredEquipments.every((equipment) => room.equipments.includes(equipment));
-              }).filter((room) => {
-                const preferredFloor = watch("floor");
-                return preferredFloor ? room.floor === Number(preferredFloor) : true;
-              });
-              const availableRooms = filteredRooms.filter((room) => {
-                const date = watch("date");
-                const start = watch("start");
-                const end = watch("end");
-                return !reservations.some((reservation) => reservation.date === format(date, "yyyy-MM-dd") && reservation.roomId === room.id && reservation.start < end && reservation.end > start);
-              });
-
-              return <>
-                {availableRooms.map((room) => (
-                  <RoomSelect key={room.id} name={room.name} floor={room.floor} capacity={room.capacity} equipments={room.equipments} />
-                ))}
-              </>
-            }}
-          </SuspenseQueries>
-
-          <Button size="lg">예약하기</Button>
-        </CardContent>
-      </Card>
     </div >
   );
 }
