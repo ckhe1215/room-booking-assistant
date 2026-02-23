@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SubCard, SubCardContent, SubCardHeader } from "@/components/ui/sub-card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { toast } from "@/hooks/use-toast";
 import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions } from "@/src/remotes/queryOptions";
 import { SuspenseQueries } from '@suspensive/react-query';
-import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
+import { format, isAfter, parse } from "date-fns";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useSearchParams } from "react-router-dom";
@@ -39,6 +41,7 @@ export function BookingTab() {
     }
   });
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   return (
     <div className="space-y-6">
@@ -76,11 +79,23 @@ export function BookingTab() {
         </CardContent>
       </Card>
 
-      <form onSubmit={handleSubmit((data) => {
+      <form onSubmit={handleSubmit(async (data) => {
         if (!selectedRoom) {
+          toast({
+            title: "예약 실패",
+            description: "회의실을 선택해주세요.",
+          });
           return;
         }
-        createReservations({
+
+        if (isAfter(parse(data.start, "HH:mm", new Date()), parse(data.end, "HH:mm", new Date()))) {
+          toast({
+            title: "예약 실패",
+            description: "종료 시간이 시작 시간보다 늦어야합니다.",
+          });
+          return;
+        }
+        const res = await createReservations({
           roomId: selectedRoom,
           date: format(data.date, 'yyyy-MM-dd'),
           start: data.start,
@@ -88,6 +103,14 @@ export function BookingTab() {
           attendees: data.attendees,
           equipments: data.equipments,
         });
+
+        if (res.ok) {
+          queryClient.invalidateQueries({ queryKey: ["reservations", date] });
+          toast({
+            title: "예약 완료",
+            description: "예약이 완료되었습니다.",
+          });
+        }
       })}>
         <Card>
           <CardHeader>
