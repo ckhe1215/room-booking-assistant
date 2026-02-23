@@ -30,6 +30,23 @@ export const getReservationsQueryOptions = (date: string) => {
   };
 };
 
+export type MyReservationsResponse = {
+  id: string;
+  roomId: string;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:mm
+  end: string; // HH:mm
+  attendees: number;
+  equipments: ("tv" | "whiteboard" | "video" | "speaker")[];
+};
+
+export const getMyReservationsQueryOptions = () => {
+  return {
+    queryKey: ["my-reservations"],
+    queryFn: (): Promise<MyReservationsResponse[]> => fetch("/api/my-reservations").then((res) => res.json()),
+  };
+};
+
 type Reservation = {
   id: string;
   roomId: string;
