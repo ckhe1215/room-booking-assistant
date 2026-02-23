@@ -1,4 +1,4 @@
-type RoomsResponse = {
+export type RoomsResponse = {
   id: string;
   name: string;
   floor: number;
