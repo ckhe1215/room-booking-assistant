@@ -22,13 +22,13 @@ type BookingFormValues = {
   start: string;
   end: string;
   floor?: string;
-  equipments: string[];
+  equipments: ('tv' | 'whiteboard' | 'video' | 'speaker')[];
 }
 
 export function BookingTab() {
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
-  const { control, register, watch } = useForm<BookingFormValues>({
+  const { control, register, watch } = useForm<BookingFormValues>({ // TODO: 검증추가
     defaultValues: {
       date: new Date(),
       attendees: 1,
@@ -37,8 +37,6 @@ export function BookingTab() {
       equipments: [],
     }
   });
-
-  console.log(watch("floor"), watch("equipments"))
 
   return (
     <div className="space-y-6">
@@ -72,7 +70,6 @@ export function BookingTab() {
                 )
               })
             }}
-
           </SuspenseQueries>
         </CardContent>
       </Card>
@@ -181,8 +178,33 @@ export function BookingTab() {
           <CardTitle>예약 가능한 회의실</CardTitle>
         </CardHeader>
         <CardContent>
-          <RoomSelect selected name="회의실 1" floor={1} capacity={4} equipments={["tv", "whiteboard"]} />
-          <RoomSelect name="회의실 2" floor={1} capacity={4} equipments={["tv", "whiteboard"]} />
+          <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
+            {([{ data: rooms }, { data: reservations }]) => {
+
+              const filteredRooms = rooms.filter((room) => {
+                return room.capacity >= watch("attendees");
+              }).filter((room) => {
+                const requiredEquipments = watch("equipments");
+                return requiredEquipments.every((equipment) => room.equipments.includes(equipment));
+              }).filter((room) => {
+                const preferredFloor = watch("floor");
+                return preferredFloor ? room.floor === Number(preferredFloor) : true;
+              });
+              const availableRooms = filteredRooms.filter((room) => {
+                const date = watch("date");
+                const start = watch("start");
+                const end = watch("end");
+                return !reservations.some((reservation) => reservation.date === format(date, "yyyy-MM-dd") && reservation.roomId === room.id && reservation.start < end && reservation.end > start);
+              });
+
+              return <>
+                {availableRooms.map((room) => (
+                  <RoomSelect key={room.id} name={room.name} floor={room.floor} capacity={room.capacity} equipments={room.equipments} />
+                ))}
+              </>
+            }}
+          </SuspenseQueries>
+
           <Button size="lg">예약하기</Button>
         </CardContent>
       </Card>

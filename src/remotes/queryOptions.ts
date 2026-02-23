@@ -3,7 +3,7 @@ type RoomsResponse = {
   name: string;
   floor: number;
   capacity: number;
-  equipment: ("tv" | "whiteboard" | "video" | "speaker")[];
+  equipments: ("tv" | "whiteboard" | "video" | "speaker")[];
 };
 
 export const getRoomsQueryOptions = () => {
