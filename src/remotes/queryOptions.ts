@@ -87,3 +87,9 @@ export const createReservations = (request: CreateReservationRequest): Promise<C
     body: JSON.stringify(request),
   }).then((res) => res.json());
 };
+
+export const cancelReservation = (id: string) => {
+  return fetch(`/api/reservations/${id}`, {
+    method: "DELETE",
+  }).then((res) => res.json());
+};
