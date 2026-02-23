@@ -14,7 +14,7 @@ import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions }
 import { SuspenseQueries } from '@suspensive/react-query';
 import { useQueryClient } from "@tanstack/react-query";
 import { format, isAfter, parse } from "date-fns";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useSearchParams } from "react-router-dom";
 import { RoomSelect } from "./room-select";
@@ -31,17 +31,24 @@ type BookingFormValues = {
 export function BookingTab() {
   const [searchParams, setSearchParams] = useSearchParams();
   const date = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
-  const { control, register, watch, handleSubmit } = useForm<BookingFormValues>({ // TODO: 검증추가
+  const { control, register, watch, handleSubmit, formState: { errors }, trigger } = useForm<BookingFormValues>({
+    mode: "onChange",
     defaultValues: {
       date: new Date(),
       attendees: 1,
       start: "09:00",
       end: "10:00",
       equipments: [],
-    }
+    },
   });
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const startTime = watch("start");
+
+  useEffect(() => {
+    trigger("end");
+  }, [startTime, trigger]);
 
   return (
     <div className="space-y-6">
@@ -124,7 +131,8 @@ export function BookingTab() {
                 <DateField label="날짜" value={field.value} onSelect={field.onChange} />
               )}
             />
-            <InputField label="참석 인원" placeholder="1" type="number" min={1} {...register("attendees")} />
+            <InputField label="참석 인원" placeholder="1" type="number" {...register("attendees", { min: 1 })} />
+            {errors.attendees && <p className="text-red-500">참석 인원은 최소 한 명 이상이어야 합니다.</p>}
             <Controller
               name="start"
               control={control}
@@ -146,6 +154,14 @@ export function BookingTab() {
             <Controller
               name="end"
               control={control}
+              rules={{
+                validate: (value) => {
+                  const start = parse(watch("start"), "HH:mm", new Date());
+                  const end = parse(value, "HH:mm", new Date());
+
+                  return isAfter(end, start) || "종료 시간은 시작 시간 이후이어야 합니다.";
+                }
+              }}
               render={({ field }) => (
                 <SelectField label="종료 시간" options={[{
                   label: "09:00",
@@ -158,9 +174,11 @@ export function BookingTab() {
                   value: "17:00" // TODO: 실제 값 넣기
                 }]}
                   value={field.value}
-                  onValueChange={field.onChange} />
+                  onValueChange={field.onChange}
+                />
               )}
             />
+            {errors.end && <p className="text-red-500">종료 시간은 시작 시간 이후이어야 합니다.</p>}
             <Controller
               name="floor"
               control={control}
@@ -216,7 +234,6 @@ export function BookingTab() {
           <CardContent>
             <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(date)]}>
               {([{ data: rooms }, { data: reservations }]) => {
-
                 const filteredRooms = rooms.filter((room) => {
                   return room.capacity >= watch("attendees");
                 }).filter((room) => {
