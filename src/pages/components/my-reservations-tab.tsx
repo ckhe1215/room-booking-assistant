@@ -10,7 +10,7 @@ export function MyReservationsTab() {
   return (
     <SuspenseQuery {...getMyReservationsQueryOptions()}>
       {({ data }) => {
-        if (data.length === 0) { // TODO: 테스트
+        if (data.length === 0) {
           return <div className="text-muted-foreground py-20 text-center">
             <Calendar className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>예약 내역이 없습니다.</p>
