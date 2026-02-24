@@ -4,7 +4,7 @@ import { ReservationsResponse, RoomsResponse } from "../remotes/queryOptions";
 export const validateStartEndTime = (start: string, end: string) => {
   const startTime = parseHHmm(start);
   const endTime = parseHHmm(end);
-  return isAfter(startTime, endTime) || isSameMinute(startTime, endTime);
+  return isAfter(endTime, startTime) || isSameMinute(startTime, endTime);
 };
 
 export const isEnoughCapacity = (room: RoomsResponse, attendees: number) => {

@@ -32,7 +32,7 @@ type BookingFormValues = {
 const DEFAULT_FORM_VALUES: BookingFormValues = {
   date: new Date(),
   attendees: 1,
-  start: "9:00",
+  start: "09:00",
   end: "10:00",
   equipments: [],
 }
@@ -98,7 +98,7 @@ export function BookingTab() {
           });
           return;
         }
-        if (validateStartEndTime(data.start, data.end)) {
+        if (!validateStartEndTime(data.start, data.end)) {
           toast({
             title: "예약 실패",
             description: "종료 시간이 시작 시간보다 늦어야합니다.",
@@ -139,7 +139,7 @@ export function BookingTab() {
               name="end"
               control={control}
               rules={{
-                validate: (value) => !validateStartEndTime(watch("start"), value) || "종료 시간은 시작 시간 이후이어야 합니다."
+                validate: (value) => validateStartEndTime(watch("start"), value) || "종료 시간은 시작 시간 이후이어야 합니다."
               }}
               render={({ field }) =>
                 <SelectField
