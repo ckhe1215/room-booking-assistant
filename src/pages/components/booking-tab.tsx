@@ -1,19 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Presentation, Tv, Video, Volume2 } from "lucide-react";
-
 import { DateField } from "@/components/date-field";
 import { InputField } from "@/components/input-field";
 import { SelectField } from "@/components/select-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { SubCard, SubCardContent, SubCardHeader } from "@/components/ui/sub-card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "@/hooks/use-toast";
-import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions, RoomsResponse } from "@/src/remotes/queryOptions";
+import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions, ReservationsResponse, RoomsResponse } from "@/src/remotes/queryOptions";
 import { SuspenseQueries, SuspenseQuery } from '@suspensive/react-query';
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { format, isAfter, isSameMinute, parse } from "date-fns";
+import { Presentation, Tv, Video, Volume2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { useSearchParams } from "react-router-dom";
 import { RoomSelect } from "./room-select";
@@ -191,23 +190,15 @@ export function BookingTab() {
         <CardContent>
           <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(format(watch("date"), "yyyy-MM-dd"))]}>
             {([{ data: rooms }, { data: reservations }]) => {
-              const filteredRooms = rooms.filter((room) => {
-                return room.capacity >= watch("attendees");
-              }).filter((room) => {
-                const requiredEquipments = watch("equipments");
-                return requiredEquipments.every((equipment) => room.equipments.includes(equipment));
-              }).filter((room) => {
-                const preferredFloor = watch("floor");
-                return preferredFloor ? room.floor === Number(preferredFloor) : true;
-              });
-              const availableRooms = filteredRooms.filter((room) => {
-                const start = parse(watch("start"), "HH:mm", new Date());
-                const end = parse(watch("end"), "HH:mm", new Date());
-                return !reservations.some((reservation) => reservation.roomId === room.id
-                  && isAfter(end, parse(reservation.start, "HH:mm", new Date()))
-                  && isAfter(parse(reservation.end, "HH:mm", new Date()), start));
-              });
-
+              const filteredRooms = rooms.filter((room) =>
+                isEnoughCapacity(room, watch("attendees"))
+                && hasRequiredEquipments(room, watch("equipments"))
+                && isPreferredFloor(room, watch("floor"))
+              );
+              const availableRooms = filteredRooms.filter((room) =>
+                !reservations.some((reservation) => reservation.roomId === room.id
+                  && isDuplicateReservation(reservation, watch("start"), watch("end"))
+                ));
               return <>
                 {availableRooms.map((room) => (
                   <RoomSelect key={room.id}
@@ -242,12 +233,13 @@ export const getFloors = (rooms: RoomsResponse[]) => {
 export const getTimeOptions = ({ from, to }: { from: number; to: number }) => {
   const hours = Array.from({ length: to - from }, (_, i) => i + from);
   const minutes = [0, 30];
+  const padStart = (num: number) => num.toString().padStart(2, "0");
   return hours.flatMap((hour) => minutes.map((minute) => ({
-    label: `${hour}:${minute < 10 ? "0" : ""}${minute}`,
-    value: `${hour}:${minute < 10 ? "0" : ""}${minute}`,
+    label: `${padStart(hour)}:${padStart(minute)}`,
+    value: `${padStart(hour)}:${padStart(minute)}`,
   }))).concat({
-    label: `${to}:00`,
-    value: `${to}:00`,
+    label: `${padStart(to)}:00`,
+    value: `${padStart(to)}:00`,
   });
 }
 
@@ -271,7 +263,23 @@ const handleCreateReservation = async (data: BookingFormValues, queryClient: Que
 }
 
 const validateStartEndTime = (start: string, end: string) => {
-  const startTime = parse(start, "HH:mm", new Date());
-  const endTime = parse(end, "HH:mm", new Date());
+  const startTime = parseHHmm(start);
+  const endTime = parseHHmm(end);
   return isAfter(startTime, endTime) || isSameMinute(startTime, endTime);
+}
+
+const isEnoughCapacity = (room: RoomsResponse, attendees: number) => {
+  return room.capacity >= attendees;
+}
+const hasRequiredEquipments = (room: RoomsResponse, equipments: ('tv' | 'whiteboard' | 'video' | 'speaker')[]) => {
+  return equipments.every((equipment) => room.equipments.includes(equipment));
+}
+const isPreferredFloor = (room: RoomsResponse, preferredFloor?: string) => {
+  return preferredFloor ? room.floor === Number(preferredFloor) : true;
+}
+
+const parseHHmm = (time: string) => parse(time, "HH:mm", new Date());
+
+const isDuplicateReservation = (reservation: ReservationsResponse, start: string, end: string) => {
+  return isAfter(parseHHmm(end), parseHHmm(reservation.start)) && isAfter(parseHHmm(reservation.end), parseHHmm(start));
 }

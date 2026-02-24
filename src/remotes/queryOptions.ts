@@ -15,7 +15,7 @@ export const getRoomsQueryOptions = () => {
   });
 };
 
-type ReservationsResponse = {
+export type ReservationsResponse = {
   id: string;
   roomId: string;
   date: string; // YYYY-MM-DD
