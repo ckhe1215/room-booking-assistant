@@ -54,11 +54,11 @@ export function BookingTab() {
           <CardTitle>예약 현황</CardTitle>
         </CardHeader>
         <CardContent>
-          <DateField label="날짜 선택" value={new Date(searchParams.get("date") ?? "")} onSelect={
-            (date) => {
-              setSearchParams({ date: format(date ?? new Date(), 'yyyy-MM-dd') })
-            }
-          } />
+          <DateField
+            label="날짜 선택"
+            value={new Date(searchParams.get("date") ?? "")}
+            onSelect={(date) => { setSearchParams({ date: format(date ?? new Date(), 'yyyy-MM-dd') }) }}
+          />
           <SuspenseQueries queries={[getRoomsQueryOptions(), getReservationsQueryOptions(dateParam)]}>
             {([{ data: rooms }, { data: reservations }]) => rooms.map((room) => {
               const currentRoomReservations = reservations.filter((reservation) => reservation.roomId === room.id);
@@ -115,14 +115,16 @@ export function BookingTab() {
             <Controller
               name="start"
               control={control}
-              render={({ field }) => (
-                <SelectField label="시작 시간" options={getTimeOptions({ from: 9, to: 20 })}
+              render={({ field }) =>
+                <SelectField
+                  label="시작 시간"
+                  options={getTimeOptions({ from: 9, to: 20 })}
                   value={field.value}
                   onValueChange={(value) => {
                     field.onChange(value);
                     trigger("end");
                   }} />
-              )}
+              }
             />
             <Controller
               name="end"
@@ -130,18 +132,20 @@ export function BookingTab() {
               rules={{
                 validate: (value) => !validateStartEndTime(watch("start"), value) || "종료 시간은 시작 시간 이후이어야 합니다."
               }}
-              render={({ field }) => (
-                <SelectField label="종료 시간" options={getTimeOptions({ from: 9, to: 20 })}
+              render={({ field }) =>
+                <SelectField
+                  label="종료 시간"
+                  options={getTimeOptions({ from: 9, to: 20 })}
                   value={field.value}
                   onValueChange={field.onChange}
                 />
-              )}
+              }
             />
             {errors.end && <p className="text-red-500">{errors.end.message}</p>}
             <Controller
               name="floor"
               control={control}
-              render={({ field }) => (
+              render={({ field }) =>
                 <SuspenseQuery {...getRoomsQueryOptions()}>
                   {({ data }) =>
                     <SelectField
@@ -152,15 +156,14 @@ export function BookingTab() {
                     />
                   }
                 </SuspenseQuery>
-
-              )}
+              }
             />
             <div className="space-y-2">
               <Label>필요 장비</Label>
               <Controller
                 name="equipments"
                 control={control}
-                render={({ field }) => (
+                render={({ field }) =>
                   <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm" value={field.value} onValueChange={field.onChange}>
                     {[
                       { label: "TV", value: "tv", icon: <Tv className="h-4 w-4" /> },
@@ -174,7 +177,7 @@ export function BookingTab() {
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
-                )}
+                }
               />
             </div>
           </CardContent>
@@ -200,7 +203,9 @@ export function BookingTab() {
               const availableRooms = filteredRooms.filter((room) => {
                 const start = parse(watch("start"), "HH:mm", new Date());
                 const end = parse(watch("end"), "HH:mm", new Date());
-                return !reservations.some((reservation) => reservation.roomId === room.id && isAfter(end, parse(reservation.start, "HH:mm", new Date())) && isAfter(parse(reservation.end, "HH:mm", new Date()), start));
+                return !reservations.some((reservation) => reservation.roomId === room.id
+                  && isAfter(end, parse(reservation.start, "HH:mm", new Date()))
+                  && isAfter(parse(reservation.end, "HH:mm", new Date()), start));
               });
 
               return <>
