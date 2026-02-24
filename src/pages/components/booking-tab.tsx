@@ -13,8 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { createReservations, getReservationsQueryOptions, getRoomsQueryOptions, RoomsResponse } from "@/src/remotes/queryOptions";
 import { SuspenseQueries, SuspenseQuery } from '@suspensive/react-query';
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
-import { format, isAfter, parse } from "date-fns";
-import { useEffect, useState } from "react";
+import { format, isAfter, isSameMinute, parse } from "date-fns";
 import { Controller, useForm } from "react-hook-form";
 import { useSearchParams } from "react-router-dom";
 import { RoomSelect } from "./room-select";
@@ -26,6 +25,7 @@ type BookingFormValues = {
   end: string;
   floor?: string;
   equipments: ('tv' | 'whiteboard' | 'video' | 'speaker')[];
+  selectedRoomId?: string;
 }
 
 const DEFAULT_FORM_VALUES: BookingFormValues = {
@@ -42,16 +42,10 @@ export function BookingTab() {
   const [searchParams, setSearchParams] = useSearchParams();
   const dateParam = searchParams.get("date") || format(new Date(), 'yyyy-MM-dd');
 
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-
-  const { control, register, watch, handleSubmit, formState: { errors }, trigger } = useForm<BookingFormValues>({
+  const { control, register, watch, handleSubmit, formState: { errors }, trigger, setValue } = useForm<BookingFormValues>({
     mode: "onChange",
     defaultValues: DEFAULT_FORM_VALUES,
   });
-
-  useEffect(() => {
-    trigger("end");
-  }, [watch("start"), trigger]);
 
   return (
     <div className="space-y-6">
@@ -60,7 +54,7 @@ export function BookingTab() {
           <CardTitle>예약 현황</CardTitle>
         </CardHeader>
         <CardContent>
-          <DateField label="날짜 선택" value={new Date(dateParam)} onSelect={
+          <DateField label="날짜 선택" value={new Date(searchParams.get("date") ?? "")} onSelect={
             (date) => {
               setSearchParams({ date: format(date ?? new Date(), 'yyyy-MM-dd') })
             }
@@ -88,7 +82,7 @@ export function BookingTab() {
       </Card>
 
       <form id="reservation-form" onSubmit={handleSubmit((data) => {
-        if (!selectedRoom) {
+        if (!data.selectedRoomId) {
           toast({
             title: "예약 실패",
             description: "회의실을 선택해주세요.",
@@ -102,7 +96,7 @@ export function BookingTab() {
           });
           return;
         }
-        handleCreateReservation(data, selectedRoom, queryClient);
+        handleCreateReservation(data, queryClient);
       })}>
         <Card>
           <CardHeader>
@@ -124,7 +118,10 @@ export function BookingTab() {
               render={({ field }) => (
                 <SelectField label="시작 시간" options={getTimeOptions({ from: 9, to: 20 })}
                   value={field.value}
-                  onValueChange={field.onChange} />
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    trigger("end");
+                  }} />
               )}
             />
             <Controller
@@ -184,8 +181,6 @@ export function BookingTab() {
         </Card>
       </form>
 
-
-
       <Card>
         <CardHeader>
           <CardTitle>예약 가능한 회의실</CardTitle>
@@ -210,9 +205,14 @@ export function BookingTab() {
 
               return <>
                 {availableRooms.map((room) => (
-                  <RoomSelect key={room.id} selected={room.id === selectedRoom} onSelect={() => {
-                    setSelectedRoom(room.id);
-                  }} name={room.name} floor={room.floor} capacity={room.capacity} equipments={room.equipments} />
+                  <RoomSelect key={room.id}
+                    selected={room.id === watch("selectedRoomId")}
+                    onSelect={() => setValue("selectedRoomId", room.id)}
+                    name={room.name}
+                    floor={room.floor}
+                    capacity={room.capacity}
+                    equipments={room.equipments}
+                  />
                 ))}
               </>
             }}
@@ -246,9 +246,9 @@ export const getTimeOptions = ({ from, to }: { from: number; to: number }) => {
   });
 }
 
-const handleCreateReservation = async (data: BookingFormValues, selectedRoom: string, queryClient: QueryClient) => {
+const handleCreateReservation = async (data: BookingFormValues, queryClient: QueryClient) => {
   const res = await createReservations({
-    roomId: selectedRoom,
+    roomId: data.selectedRoomId!,
     date: format(data.date, 'yyyy-MM-dd'),
     start: data.start,
     end: data.end,
@@ -268,5 +268,5 @@ const handleCreateReservation = async (data: BookingFormValues, selectedRoom: st
 const validateStartEndTime = (start: string, end: string) => {
   const startTime = parse(start, "HH:mm", new Date());
   const endTime = parse(end, "HH:mm", new Date());
-  return isAfter(startTime, endTime);
+  return isAfter(startTime, endTime) || isSameMinute(startTime, endTime);
 }
